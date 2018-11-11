@@ -73,7 +73,7 @@ int main()
 
 	if(cams != NULL)
 		all_cams_destroyer(cams);
-	
+
 	return 0;
 }
 
@@ -89,13 +89,13 @@ int main_record_cycle(struct all_cams* cams)
 	char command_str[1000] = {};
 	snprintf(command_str, sizeof(command_str), "%s/logs.txt", cams->massive[0]->c_rec_adr); // TEST
 	FILE *local_log = fopen(command_str, "a+");
-	
+
 	while(is_going == true)
 	{
 		if(child_pid != 0) 	// roditel
 		{
 			printf("> Wait your commands (one symbol)! (k = killall, a = show active records)\n");
-			
+
 			scanf("%c", &command);
 
 			if(command == 'k')
@@ -239,7 +239,7 @@ void all_cams_destroyer(struct all_cams* cams)
 {
 	int max_i = cams->maximum;
 	int i = 0;
-	
+
 	while(i != max_i)
 	{
 		if(cams->massive[i] != NULL)
