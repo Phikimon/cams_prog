@@ -1,4 +1,0 @@
-#!/bin/bash
-echo 'clear in'
-echo $1
-find $1 -mtime $2 -exec rm {} \;

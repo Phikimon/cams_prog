@@ -34,7 +34,7 @@ int main_cycle(void)
 	int error = 0;
 	char shure = 0;
 
-	printf(">>> initialization start (enter any string)...\n");	
+	printf(">>> initialization start (enter any string)...\n");
 	printf("> ");
 	scanf("%100[^\n]",cur_command);
 	printf("\n");
@@ -51,7 +51,7 @@ int main_cycle(void)
 		printf("\n");
 
 		printf(">>> \"%s\"\n", cur_command); // TEST
-		
+
 		// Commands here
 
 		if(strcmp(cur_command,"set delay") == 0)
