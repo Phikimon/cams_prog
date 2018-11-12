@@ -13,7 +13,9 @@ prompt()
 
 # Check arguments
 
-if [ "$1" == "-h" ]
+CONF_FILE="$1"
+
+if [ -z $CONF_FILE ]
 then
 	echo "Usage: $0 <config_file>"
 	echo ""
@@ -26,8 +28,6 @@ then
 	exit
 fi
 
-CONF_FILE="$1"
-
 test -e "$CONF_FILE"
 if [ $? -ne 0 ]
 then
@@ -36,6 +36,7 @@ then
 fi
 
 # Load default values
+
 segment_duration_min=10
 days_for_segment_to_live=60
 
@@ -67,6 +68,13 @@ then
 	exit
 fi
 
+test -e "$temp_dir"
+if [ $? -ne 0 ]
+then
+	echo "Directory '$temp_dir' nonexistent"
+	exit
+fi
+
 # Print parsed config
 echo "	cloud_dir                = $cloud_dir"
 echo "	temp_dir                 = $temp_dir"
@@ -84,34 +92,37 @@ prompt
 
 #Start recording
 
+for i in $(seq $CAM_NUM)
+do
+	ADDRESS_VAR_NAME="camera_"$i"_address"
+	echo "`date +\"[%D %H:%M:%S]\"` Cam #$i(${!ADDRESS_VAR_NAME}): Start recording"
+	screen -d -m -L \
+		-S record ffmpeg \
+		-rtsp_transport tcp \
+		-i rtsp:/${!ADDRESS_VAR_NAME}/ch01.264?ptype=tcp \
+		-acodec copy \
+		-f segment \
+		-segment_time $segment_duration_min \
+		-segment_format avi \
+		-reset_timestamps 1 \
+		-copyts \
+		-flags global_header \
+		-strftime 1 \
+		\"$temp_dir/camera_$i/record_`date +\"%y-%m-%d_%H-%M-%S.mkv\"`\"
+	echo "`date +\"[%D %H:%M:%S]\"` Cam #$i(${!ADDRESS_VAR_NAME}): screen return code: $?"
+done
+
 while :
 do
-	for i in $(seq $CAM_NUM)
-	do
-		ADDRESS_VAR_NAME="camera_"$i"_address"
-		echo "`date +\"[%D %H:%M:%S]\"` Cam #$i(${!ADDRESS_VAR_NAME}): Start recording"
-		screen -d -m \
-			-S record ffmpeg \
-			-rtsp_transport tcp \
-			-i rtsp:/${!ADDRESS_VAR_NAME}/ch01.264?ptype=tcp \
-			-acodec copy \
-			-f segment \
-			-segment_time $segment_duration_min \
-			-segment_format avi \
-			-reset_timestamps 1 \
-			-copyts \
-			-flags global_header \
-			-strftime 1 \
-			\"$temp_dir/camera_$i/record_`date +\"%y-%m-%d_%H-%M-%S.mkv\"`\"
-	done
-
 	SLEEP_TIME=$(($segment_duration_min * 90))
 	echo "`date +\"[%D %H:%M:%S]\"` Sleep for $SLEEP_TIME"
 	sleep $SLEEP_TIME
 
 	for i in $(seq $CAM_NUM)
 	do
-		find "$cloud_dir/camera_$i" -mtime +$days_for_segment_to_live -exec rm -- '{}' \;
-		find "$temp_dir/camera_$i" -mmin +$segment_duration_min -exec mv -- '{}' $cloud_dir \;
+		find "$cloud_dir/camera_$i" -type f -mtime +$days_for_segment_to_live -exec rm -- '{}' \;
+		find "$temp_dir/camera_$i" -type f -mmin +$segment_duration_min -exec mv -- '{}' $cloud_dir \;
 	done
+
+	echo
 done
